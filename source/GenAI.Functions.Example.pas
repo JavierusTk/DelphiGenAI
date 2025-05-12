@@ -94,6 +94,7 @@ end;
 
 function TWeatherReportFunction.GetParameters: string;
 begin
+// for Delphi 10.3 et 11
 //  Result :=
 //    '{'+
 //    '"type": "object",'+
@@ -110,6 +111,28 @@ begin
 //     '"required": ["location"],'+
 //     '"additionalProperties": false'+
 //  '}';
+
+
+// for Delphi 12 with triple quotes
+//  Result :=
+//    '''
+//      {
+//        "type": "object",
+//        "properties": {
+//             "location": {
+//                 "type": "string",
+//                 "description": "The city and department, e.g. Marseille, 13"
+//             },
+//             "unit": {
+//                 "type": "string",
+//                 "enum": ["celsius", "fahrenheit"]
+//             }
+//         },
+//         "required": ["location"],
+//         "additionalProperties": false
+//      }
+//    ''';
+
 
   {--- If we use the TSchemaParams class defined in the MistralAI.Schema.pas unit }
 //  var Schema := TSchemaParams.New(

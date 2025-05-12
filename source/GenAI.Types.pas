@@ -967,7 +967,21 @@ type
     /// This size is ideal for portrait-oriented applications, such as posters,
     /// banners, or artwork. Supported in DALL-E 3.
     /// </remarks>
-    r1024x1792
+    r1024x1792,
+    /// <summary>
+    /// landscape
+    /// </summary>
+    /// <remarks>
+    /// Only for gpt-image-1
+    /// </remarks>
+    r1536x1024,
+    /// <summary>
+    /// portrait
+    /// </summary>
+    /// <remarks>
+    /// Only for gpt-image-1
+    /// </remarks>
+    r1024x1536
   );
 
   TImageSizeHelper = record Helper for TImageSize
@@ -1006,6 +1020,66 @@ type
   );
 
   TImageStyleHelper = record Helper for TImageStyle
+    constructor Create(const Value: string);
+    function ToString: string;
+  end;
+
+  TBackGroundType = (
+    transparent,
+    opaque,
+    auto
+  );
+
+  TBackGroundTypeHelper = record Helper for TBackGroundType
+    constructor Create(const Value: string);
+    function ToString: string;
+  end;
+
+  TImageModerationType = (
+    low,
+    auto
+  );
+
+  TImageModerationTypeHelper = record Helper for TImageModerationType
+    constructor Create(const Value: string);
+    function ToString: string;
+  end;
+
+  TOutputFormatType = (
+    png,
+    jpeg,
+    webp
+  );
+
+  TOutputFormatTypeHelper = record Helper for TOutputFormatType
+    constructor Create(const Value: string);
+    function ToString: string;
+  end;
+
+  TImageQualityType = (
+    /// <summary>
+    /// Only for gpt-image-1
+    /// </summary>
+    high,
+    /// <summary>
+    /// Only for gpt-image-1
+    /// </summary>
+    medium,
+    /// <summary>
+    /// Only for gpt-image-1
+    /// </summary>
+    low,
+    /// <summary>
+    /// Only for dall-e-2
+    /// </summary>
+    standard,
+    /// <summary>
+    /// Defaults to auto
+    /// </summary>
+    auto
+  );
+
+  TImageQualityTypeHelper = record Helper for TImageQualityType
     constructor Create(const Value: string);
     function ToString: string;
   end;
@@ -1504,7 +1578,8 @@ type
 
   TResponseContentType = (
     output_text,
-    refusal
+    refusal,
+    summary_text
   );
 
   TResponseContentTypeHelper = record Helper for TResponseContentType
@@ -1652,6 +1727,12 @@ type
     web_search_call_in_progress,
     web_search_call_searching,
     web_search_call_completed,
+
+    reasoning_summary_part_add,
+    reasoning_summary_part_done,
+    reasoning_summary_text_delta,
+    reasoning_summary_text_done,
+
     error
   );
 
@@ -2136,7 +2217,8 @@ end;
 constructor TImageSizeHelper.Create(const Value: string);
 begin
   Self := TEnumValueRecovery.TypeRetrieve<TImageSize>(Value,
-            ['256x256', '512x512', '1024x1024', '1792x1024', '1024x1792']);
+            ['256x256', '512x512', '1024x1024', '1792x1024', '1024x1792',
+             '1536x1024', '1024x1536']);
 end;
 
 function TImageSizeHelper.ToString: string;
@@ -2152,6 +2234,10 @@ begin
       Exit('1792x1024');
     TImageSize.r1024x1792:
       Exit('1024x1792');
+    TImageSize.r1536x1024:
+      Exit('1536x1024');
+    TImageSize.r1024x1536:
+      Exit('1024x1536');
   end;
 end;
 
@@ -3158,7 +3244,7 @@ end;
 constructor TResponseContentTypeHelper.Create(const Value: string);
 begin
   Self := TEnumValueRecovery.TypeRetrieve<TResponseContentType>(Value,
-            ['output_text', 'refusal']);
+            ['output_text', 'refusal', 'summary_text']);
 end;
 
 function TResponseContentTypeHelper.ToString: string;
@@ -3168,6 +3254,8 @@ begin
       Exit('output_text');
     TResponseContentType.refusal:
       Exit('refusal');
+    TResponseContentType.summary_text:
+      Exit('summary_text');
   end;
 end;
 
@@ -3452,6 +3540,10 @@ begin
               'response.web_search_call.in_progress',
               'response.web_search_call.searching',
               'response.web_search_call.completed',
+              'response.reasoning_summary_part.added',
+              'response.reasoning_summary_part.done',
+              'response.reasoning_summary_text.delta',
+              'response.reasoning_summary_text.done',
               'error'
             ]);
 end;
@@ -3503,6 +3595,17 @@ begin
       Exit('response.web_search_call.searching');
     TResponseStreamType.web_search_call_completed:
       Exit('response.web_search_call.completed');
+
+    TResponseStreamType.reasoning_summary_part_add:
+      Exit('response.reasoning_summary_part.added');
+    TResponseStreamType.reasoning_summary_part_done:
+      Exit('response.reasoning_summary_part.done');
+    TResponseStreamType.reasoning_summary_text_delta:
+      Exit('response.reasoning_summary_text.delta');
+    TResponseStreamType.reasoning_summary_text_done:
+      Exit('response.reasoning_summary_text.done');
+
+
     TResponseStreamType.error:
       Exit('error');
   end;
@@ -3520,6 +3623,88 @@ procedure TResponseStreamTypeInterceptor.StringReverter(Data: TObject; Field,
   Arg: string);
 begin
   RTTI.GetType(Data.ClassType).GetField(Field).SetValue(Data, TValue.From(TResponseStreamType.Create(Arg)));
+end;
+
+{ TBackGroundTypeHelper }
+
+constructor TBackGroundTypeHelper.Create(const Value: string);
+begin
+  Self := TEnumValueRecovery.TypeRetrieve<TBackGroundType>(Value,
+            ['transparent', 'opaque', 'auto']);
+end;
+
+function TBackGroundTypeHelper.ToString: string;
+begin
+  case self of
+    TBackGroundType.transparent:
+      Exit('transparent');
+    TBackGroundType.opaque:
+      Exit('opaque');
+    TBackGroundType.auto:
+      Exit('auto');
+  end;
+end;
+
+{ TImageModerationTypeHelper }
+
+constructor TImageModerationTypeHelper.Create(const Value: string);
+begin
+  Self := TEnumValueRecovery.TypeRetrieve<TImageModerationType>(Value,
+            ['low', 'auto']);
+end;
+
+function TImageModerationTypeHelper.ToString: string;
+begin
+  case self of
+    TImageModerationType.low:
+      Exit('low');
+    TImageModerationType.auto:
+      Exit('auto');
+  end;
+end;
+
+{ TOutputFormatTypeHelper }
+
+constructor TOutputFormatTypeHelper.Create(const Value: string);
+begin
+  Self := TEnumValueRecovery.TypeRetrieve<TOutputFormatType>(Value,
+            ['png', 'jpeg', 'webp']);
+end;
+
+function TOutputFormatTypeHelper.ToString: string;
+begin
+  case self of
+    TOutputFormatType.png:
+      Exit('png');
+    TOutputFormatType.jpeg:
+      Exit('jpeg');
+    TOutputFormatType.webp:
+      Exit('webp');
+  end;
+end;
+
+{ TImageQualityTypeHelper }
+
+constructor TImageQualityTypeHelper.Create(const Value: string);
+begin
+  Self := TEnumValueRecovery.TypeRetrieve<TImageQualityType>(Value,
+            ['high', 'medium', 'low', 'standard', 'auto']);
+end;
+
+function TImageQualityTypeHelper.ToString: string;
+begin
+  case self of
+    TImageQualityType.high:
+      Exit('high');
+    TImageQualityType.medium:
+      Exit('medium');
+    TImageQualityType.low:
+      Exit('low');
+    TImageQualityType.standard:
+      Exit('standard');
+    TImageQualityType.auto:
+      Exit('auto');
+  end;
 end;
 
 end.
